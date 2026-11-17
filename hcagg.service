@@ -1,0 +1,23 @@
+# Example unit for hcagg. Adjust paths, user and hardening to your setup.
+
+[Unit]
+Description=hcagg health check aggregator
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/local/bin/hcagg -config /etc/hcagg/config.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+
+# Runs as the unprivileged hcagg user (see the README). Files in /etc/hcagg
+# must be readable by it.
+User=hcagg
+Group=hcagg
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

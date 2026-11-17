@@ -1,0 +1,23 @@
+# Fake services for testing hcagg, on localhost ports 8081-8084. Run hcagg itself from the terminal.
+# The services run go-httpbin, which answers /status/<code> with that code
+# and /delay/<seconds> after that many seconds.
+services:
+  users-service:
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+      - "8081:8080"
+
+  orders-service:
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+      - "8082:8080"
+
+  payments-service:
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+      - "8083:8080"
+
+  search-service:
+    image: mccutchen/go-httpbin:v2.15.0
+    ports:
+      - "8084:8080"

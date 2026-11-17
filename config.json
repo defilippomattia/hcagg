@@ -1,0 +1,33 @@
+{
+  "listen": ":9050",
+  "path": "/health",
+  "timeout": "3s",
+  "log_level": "error",
+  "response_mode": "full",
+  "checks": [
+    {
+      "name": "users-service",
+      "url": "http://localhost:8081/status/200",
+      "method": "GET",
+      "expected_status": 200
+    },
+    {
+      "name": "orders-service",
+      "url": "http://localhost:8082/status/200",
+      "method": "GET",
+      "expected_status": 200
+    },
+    {
+      "name": "payments-service",
+      "url": "http://localhost:8083/status/204",
+      "method": "GET",
+      "expected_status": 204
+    },
+    {
+      "name": "search-service",
+      "url": "http://localhost:8084/status/200",
+      "method": "HEAD",
+      "expected_status": 200
+    }
+  ]
+}
