@@ -8,7 +8,7 @@ Why use it:
 - **Simple load balancer setup:** one monitor per VM, not one per service, each with its own path and expected status.
 - **No load balancer changes:** when a team adds a service or changes a health check endpoint, you update the hcagg config. The team that manages the load balancer doesn't have to change anything.
 
-<img src="https://github.com/user-attachments/assets/ff8f539c-281b-4327-a4a0-5c8ee6f2aa0b" alt="Without hcagg the load balancer needs one monitor per service on every VM; with hcagg it needs one per VM" width="600">
+<img src="https://github.com/user-attachments/assets/ff8f539c-281b-4327-a4a0-5c8ee6f2aa0b" alt="Without hcagg the load balancer needs one monitor per service on every VM; with hcagg it needs one per VM" width="800">
 
 ## Configuration
 
