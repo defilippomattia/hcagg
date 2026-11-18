@@ -21,6 +21,9 @@ import (
 	"time"
 )
 
+// version is set at build time with -ldflags "-X main.version=v1.2.3".
+var version = "dev"
+
 type Check struct {
 	Name           string `json:"name"`
 	URL            string `json:"url"`
@@ -363,7 +366,12 @@ func fatal(msg string, err error) {
 
 func main() {
 	cfgPath := flag.String("config", "config.json", "path to config file")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
 
 	st, err := load(*cfgPath)
 	if err != nil {
@@ -372,7 +380,7 @@ func main() {
 	cfg := st.cfg
 	minLevel.Store(int32(cfg.logLevel))
 	current.Store(st)
-	logConfig("starting hcagg with config "+*cfgPath, cfg)
+	logConfig("starting hcagg "+version+" with config "+*cfgPath, cfg)
 
 	hup := make(chan os.Signal, 1)
 	signal.Notify(hup, syscall.SIGHUP)

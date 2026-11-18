@@ -1,0 +1,63 @@
+# Checks every push to main and every pull request. Publishes nothing.
+# Also called by release.yml, so a release only happens if this passes.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Check formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Run gofmt -w on these files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - run: go vet ./...
+      - run: go test -race ./...
+      - run: go build -o hcagg .
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t hcagg:ci .
+
+      # Runs the image against a fake service and expects 200.
+      - name: Smoke test the image
+        run: |
+          docker network create smoke
+          docker run -d --name target --network smoke mccutchen/go-httpbin:v2.15.0
+          mkdir smoke
+          cat > smoke/config.json <<'JSON'
+          {
+            "timeout": "3s",
+            "checks": [
+              { "name": "target", "url": "http://target:8080/status/200", "method": "GET", "expected_status": 200 }
+            ]
+          }
+          JSON
+          chmod -R a+rX smoke
+          docker run -d --name hcagg --network smoke -p 9050:9050 \
+            -v "$PWD/smoke:/etc/hcagg:ro" hcagg:ci
+          curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://localhost:9050/health
+
+      - name: Logs
+        if: always()
+        run: docker logs hcagg || true

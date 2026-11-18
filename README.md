@@ -70,7 +70,7 @@ To apply config changes without a restart, send hcagg the `HUP` signal (commands
 [hcagg.service](hcagg.service) is an example unit: it runs hcagg as an unprivileged `hcagg` user and reads `/etc/hcagg/config.json`. Change it to your liking.
 
 ```bash
-go build -o hcagg .
+curl -fL -o hcagg https://github.com/defilippomattia/hcagg/releases/latest/download/hcagg-linux-amd64
 sudo useradd -r -s /usr/sbin/nologin hcagg
 sudo install -m 755 hcagg /usr/local/bin/hcagg
 sudo install -d -m 750 -g hcagg /etc/hcagg
@@ -91,14 +91,18 @@ Files in `/etc/hcagg` (including `ca_file`, `tls_cert` and `tls_key`) must be re
 ### As a Docker container
 
 ```bash
-docker build -t hcagg .
 docker run -d --name hcagg --restart unless-stopped \
-  -p 9050:9050 -v /etc/hcagg:/etc/hcagg:ro hcagg
-```
+  -p 9050:9050 -v /etc/hcagg:/etc/hcagg:ro ghcr.io/defilippomattia/hcagg:1.0.0
 
-```bash
 docker kill --signal=HUP hcagg   # reload the config
 docker logs -f hcagg             # logs
 ```
 
 The image reads `/etc/hcagg/config.json`. Mount the folder, not the single file: many editors save by replacing the file, and a single-file mount would keep showing the container the old version. Files in it must be readable by a non-root user (e.g. mode 644). If you use `ca_file`, `tls_cert` or `tls_key`, put them in the same folder and use their `/etc/hcagg/...` paths in the config.
+
+## Development
+
+```bash
+go test -race ./...          # unit and integration tests, no Docker needed
+docker compose up -d         # fake services on ports 8081-8084, to try hcagg by hand
+```
