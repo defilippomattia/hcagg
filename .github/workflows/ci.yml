@@ -56,7 +56,16 @@ jobs:
           chmod -R a+rX smoke
           docker run -d --name hcagg --network smoke -p 9050:9050 \
             -v "$PWD/smoke:/etc/hcagg:ro" hcagg:ci
-          curl -fsS --retry 10 --retry-connrefused --retry-delay 1 http://localhost:9050/health
+          # The containers need a moment to start. Until then curl can get
+          # "connection refused", "connection reset" or a 503, so retry on any error.
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:9050/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "hcagg didn't answer 200 within 20 seconds"
+          exit 1
 
       - name: Logs
         if: always()
