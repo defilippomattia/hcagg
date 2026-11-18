@@ -1,5 +1,6 @@
 # Checks every push to main and every pull request. Publishes nothing.
 # Also called by release.yml, so a release only happens if this passes.
+# Runs weekly too, to catch vulnerabilities published since the last change.
 name: CI
 
 on:
@@ -7,18 +8,22 @@ on:
     branches: [main]
   pull_request:
   workflow_call:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  go:
+    name: Lint, test and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # Keep the Go version the same in go.mod, Dockerfile, ci.yml and release.yml.
       - uses: actions/setup-go@v6
         with:
-          go-version-file: go.mod
+          go-version: "1.27.4"
 
       - name: Check formatting
         run: |
@@ -30,14 +35,33 @@ jobs:
           fi
 
       - run: go vet ./...
+      - run: go run honnef.co/go/tools/cmd/staticcheck@v0.8.2 ./...
       - run: go test -race ./...
       - run: go build -o hcagg .
 
-  docker:
+  vulncheck:
+    name: Vulnerability scan (govulncheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.4"
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.10.0 ./...
+
+  image:
+    name: Docker build and smoke test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - run: docker build -t hcagg:ci .
+
+      # Fails on HIGH or CRITICAL vulnerabilities in the image that have a fix.
+      - name: Vulnerability scan (Trivy)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.76.2 image --exit-code 1 --severity HIGH,CRITICAL \
+            --ignore-unfixed --no-progress hcagg:ci
 
       # Runs the image against a fake service and expects 200.
       - name: Smoke test the image
