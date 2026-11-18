@@ -106,3 +106,33 @@ The image reads `/etc/hcagg/config.json`. Mount the folder, not the single file:
 go test -race ./...          # unit and integration tests, no Docker needed
 docker compose up -d         # fake services on ports 8081-8084, to try hcagg by hand
 ```
+## Releasing
+
+Every change goes through a pull request. Releases are made by tagging `main`.
+
+1. Create a branch, commit, and push:
+
+   ```bash
+   git switch main && git pull
+   git switch -c fix-timeout-log
+   # make changes, run go test -race ./...
+   git add .
+   git commit -m "Improve timeout error message"
+   git push -u origin fix-timeout-log
+   ```
+
+2. Open a pull request into `main`. You can open it as a draft early on.
+
+3. When CI is green, merge the PR. CI runs once more on `main`. Nothing is published yet. You can merge several PRs before releasing.
+
+4. Tag `main` with the new version and push the tag:
+
+   ```bash
+   git switch main && git pull
+   git tag v1.1.0
+   git push origin v1.1.0
+   ```
+
+5. The tag starts the Release workflow. It runs CI again, then publishes:
+   - the `hcagg-linux-amd64` binary and `checksums.txt` as a [GitHub Release](https://github.com/defilippomattia/hcagg/releases), with notes generated from the merged PRs;
+   - the image `ghcr.io/defilippomattia/hcagg`, tagged `1.1.0`, `1.1` and `latest`.
